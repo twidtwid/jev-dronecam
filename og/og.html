@@ -1,0 +1,56 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@800&family=JetBrains+Mono:wght@500;700;800&display=block" rel="stylesheet">
+<style>
+:root{--ink:#1a1a1a;--purple:#8d2a85;--purple-ink:#8b3981;--shadow:#c9c9cb;--lilac:#dcc0d8}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1200px;height:630px;overflow:hidden;position:relative;background:#f5f5f7;color:var(--ink);font-family:"Inter Tight",sans-serif;
+  background-image:radial-gradient(ellipse 60% 70% at 0% 0%,#e3c4de 0%,rgba(227,196,222,0) 70%),radial-gradient(ellipse 55% 60% at 0% 100%,#e6cfe3 0%,rgba(230,207,227,0) 70%)}
+.tag{position:absolute;left:60px;top:58px;height:40px;padding:0 16px;background:var(--ink);color:#fff;font:700 21px/40px "JetBrains Mono";letter-spacing:2px}
+h1{position:absolute;left:57px;top:118px;font:800 68px/1.04 "Inter Tight";letter-spacing:-2px}
+h1 .p{color:var(--purple-ink)}
+.call{position:absolute;left:60px;top:322px;width:516px;background:#fdfdff;border:3px solid var(--ink);box-shadow:8px 8px 0 var(--shadow)}
+.bar{height:36px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font:700 17px/1 "JetBrains Mono";letter-spacing:2px}
+.rec{display:inline-block;width:9px;height:9px;border-radius:50%;background:#c33;margin-left:9px;vertical-align:1px}
+.rows{padding:16px 16px 18px}
+.chips{display:flex;gap:14px}
+.chip{height:44px;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--purple);color:#fff;border:3px solid #5d1c58;box-shadow:4px 4px 0 var(--shadow)}
+.chip .k{font:500 16px/1 "JetBrains Mono"}.chip .v{font:700 22px/1 "JetBrains Mono";white-space:pre}
+.code{margin-top:16px;font:700 23px/1.5 "JetBrains Mono"}
+.code .n{color:var(--purple-ink)}
+.code .hl{background:var(--purple);color:#fff;padding:2px 7px}
+.foot{position:absolute;left:60px;top:572px;font:500 16px/1 "JetBrains Mono";color:#a59fa9;letter-spacing:2px}
+.foot b{font-weight:500;color:var(--purple-ink)}
+.cam{position:absolute;left:660px;top:58px;width:482px;background:#fdfdff;border:3px solid var(--ink);box-shadow:10px 10px 0 var(--shadow)}
+.view{margin:16px;width:444px;height:444px;border:3px solid var(--ink);border-radius:10px;overflow:hidden}
+.view canvas{width:100%;height:100%;display:block}
+.dest{position:absolute;left:598px;top:388px;width:150px;height:158px;border:3px solid var(--ink);border-radius:9px;background:#fff;overflow:hidden;box-shadow:8px 8px 0 var(--shadow)}
+.dest .lbl{position:absolute;left:0;top:0;background:var(--ink);color:#fff;font:700 13px/1 "JetBrains Mono";padding:6px 8px;letter-spacing:1px}
+.dest img{position:absolute;left:10px;top:30px;width:128px;height:118px;object-fit:contain}
+.status{position:absolute;left:840px;top:548px;width:302px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--purple);color:#fff;
+  font:800 25px/1 "JetBrains Mono";letter-spacing:2px;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--shadow)}
+</style></head><body>
+<div class="tag">JEV / IMAGES</div>
+<h1>Show it a photo.<br><span class="p">The drone finds it.</span></h1>
+<div class="call"><div class="bar"><span>CALL</span><span>#7 · 0.12 s</span></div>
+  <div class="rows"><div class="chips"><div class="chip"><span class="k">box</span><span class="v">.69 .27 .84 .44</span></div><div class="chip"><span class="k">seen</span><span class="v">0.91</span></div></div>
+  <div class="code">if seen &gt; <span class="n">0.50</span>: <span class="hl">fly(box.center)</span></div></div></div>
+<div class="foot">LIVE CALLS TO <b>JEV-1.14</b> · TRY YOUR OWN PHOTO</div>
+<div class="cam"><div class="bar"><span>DRONE CAM<span class="rec"></span></span><span>LOCKED ON</span></div><div class="view"><canvas id="c" width="888" height="888"></canvas></div></div>
+<div class="dest"><span class="lbl">DESTINATION</span><img src="mug.jpg"></div>
+<script>
+const img=new Image();img.onload=()=>{
+ const g=document.getElementById("c").getContext("2d"),S=888;g.drawImage(img,0,0,S,S);
+ g.strokeStyle="rgba(255,255,255,.95)";g.lineWidth=5;const m=26,L=52;
+ [[m,m,1,1],[S-m,m,-1,1],[m,S-m,1,-1],[S-m,S-m,-1,-1]].forEach(([a,b,dx,dy])=>{g.beginPath();g.moveTo(a,b+dy*L);g.lineTo(a,b);g.lineTo(a+dx*L,b);g.stroke();});
+ g.fillStyle="#fff";g.beginPath();g.arc(S/2,S/2,13,0,7);g.fill();g.fillStyle="#8d2a85";g.beginPath();g.arc(S/2,S/2,7,0,7);g.fill();
+ const [l,t,r,b]=[.69,.27,.84,.44].map(v=>v*S);
+ g.fillStyle="rgba(141,42,133,.22)";g.fillRect(l,t,r-l,b-t);
+ g.lineWidth=11;g.strokeStyle="#fff";g.strokeRect(l,t,r-l,b-t);g.lineWidth=6;g.strokeStyle="#8d2a85";g.strokeRect(l,t,r-l,b-t);
+ g.lineWidth=2.5;g.strokeStyle="#fff";g.strokeRect(l+8,t+8,r-l-16,b-t-16);
+ const x1=S/2+(((l+r)/2-S/2)*.0),y1=S/2,bx=(l+r)/2,by=(t+b)/2,kx=(bx-x1)?((bx>x1?l:r)-x1)/(bx-x1):9,ky=(by-y1)?((by>y1?t:b)-y1)/(by-y1):9,kk=Math.min(kx,ky),x2=x1+(bx-x1)*kk-(bx-x1)/Math.hypot(bx-x1,by-y1)*14,y2=y1+(by-y1)*kk-(by-y1)/Math.hypot(bx-x1,by-y1)*14,d=Math.hypot(x2-x1,y2-y1),ux=(x2-x1)/d,uy=(y2-y1)/d,h=40;
+ for(const [w,c] of [[18,"#fff"],[9,"#8d2a85"]]){g.lineWidth=w;g.strokeStyle=c;g.fillStyle=c;g.lineCap="round";
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-ux*h*.6,y2-uy*h*.6);g.stroke();
+  const e=(w-9)/2;g.beginPath();g.moveTo(x2+ux*e,y2+uy*e);g.lineTo(x2-ux*h-uy*(h*.6+e),y2-uy*h+ux*(h*.6+e));g.lineTo(x2-ux*h+uy*(h*.6+e),y2-uy*h-ux*(h*.6+e));g.closePath();g.fill();}
+ document.body.dataset.ready=1;};
+img.src="cam_d.jpg";
+</script></body></html>

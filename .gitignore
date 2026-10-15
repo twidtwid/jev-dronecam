@@ -1,0 +1,6 @@
+__pycache__/
+.DS_Store
+.env
+# local only: generation scratch and per-machine service files
+assets/
+launchd/

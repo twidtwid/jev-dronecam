@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>jev drone cam</title>
+<meta name="description" content="Show it a photo and a drone finds it in the room. Every frame is a live call to jev's Box question; code flies to the box.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jev-dronecam-bq3fs.sprites.app/">
+<meta property="og:title" content="jev drone cam: show it a photo, the drone finds it">
+<meta property="og:description" content="Every frame is a live call to jev's Box question. Pick a target or upload your own photo.">
+<meta property="og:image" content="https://jev-dronecam-bq3fs.sprites.app/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A drone cam view with a purple box around a yellow mug, next to the code if seen > 0.50: fly(box.center)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="jev drone cam: show it a photo, the drone finds it">
+<meta name="twitter:description" content="Every frame is a live call to jev's Box question. Pick a target or upload your own photo.">
+<meta name="twitter:image" content="https://jev-dronecam-bq3fs.sprites.app/og.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a1a1a; --purple:#8d2a85; --purple-ink:#8b3981; --lilac:#dcc0d8;
+  --panel:#fdfdff; --shadow:#c9c9cb; --muted:#8e8a93; --ready:#ececf0;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --sans:"Inter Tight","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:#f5f5f7;
+  background-image:radial-gradient(ellipse 70% 55% at 0% 8%, #e3c4de 0%, rgba(227,196,222,0) 70%),
+                   radial-gradient(ellipse 60% 50% at 0% 100%, #e6cfe3 0%, rgba(230,207,227,0) 70%);
+  background-attachment:fixed;
+  color:var(--ink); font-family:var(--sans); overflow-x:hidden;
+}
+/* the stage is designed at 1080 px wide and scaled to fit */
+#fit{position:relative;margin:0 auto;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1670px;transform-origin:0 0}
+
+.tag{position:absolute;left:60px;top:46px;height:46px;padding:0 20px;background:var(--ink);color:#fff;
+  font:700 26px/46px var(--mono);letter-spacing:2px}
+h1{position:absolute;left:58px;top:100px;font:800 86px/1.15 var(--sans);letter-spacing:-1.5px;white-space:nowrap;transition:opacity .25s}
+h1 .p{color:var(--purple-ink)}
+h1.fade{opacity:.35}
+
+.panel{position:absolute;left:60px;width:960px;background:var(--panel);border:3px solid var(--ink);
+  box-shadow:10px 10px 0 var(--shadow)}
+.bar{height:45px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;font:700 24px/1 var(--mono);letter-spacing:2px}
+.bar .rec{display:inline-block;width:11px;height:11px;border-radius:50%;background:#a3262e;margin-left:12px;vertical-align:2px}
+.bar .rec.on{animation:blink 1s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+#callmeta{letter-spacing:3px;transition:opacity .2s}
+
+#call{top:213px;height:358px}
+.line{position:absolute;left:24px;display:flex;align-items:center;gap:14px}
+.mono{font:500 29px/1 var(--mono);letter-spacing:1px}
+.thumb{width:54px;height:54px;border:2px solid var(--ink);border-radius:8px;object-fit:cover;background:#fff;display:block}
+.boxtag{background:var(--ink);color:#fff;font:700 19px/1 var(--mono);padding:7px 10px;letter-spacing:1px}
+.q{font:600 29px/1 var(--sans);letter-spacing:-.3px}
+.chip{height:54px;display:flex;align-items:center;gap:22px;padding:0 14px;background:var(--purple);color:#fff;
+  border:3px solid #5d1c58;box-shadow:5px 5px 0 var(--shadow);transition:background .25s,color .25s,border-color .25s}
+.chip .k{font:500 21px/1 var(--mono);letter-spacing:1px;opacity:.95}
+.chip .v{font:700 29px/1 var(--mono);letter-spacing:1px;white-space:pre}
+.chip.pending{background:var(--lilac);border-color:var(--lilac);color:transparent}
+.chip.pending .v,.chip.pending .k{color:transparent}
+#chipbox{min-width:338px}
+#chipconf{min-width:170px}
+.code{font:700 31px/1 var(--mono);letter-spacing:.5px}
+.code .hl{color:var(--purple-ink);padding:5px 9px;margin-left:-9px;transition:background .2s,color .2s}
+.code .hl.on{background:var(--purple);color:#fff}
+
+#cam{top:588px;height:682px}
+#view{position:absolute;left:21px;top:59px;width:603px;height:603px;border:3px solid var(--ink);border-radius:12px;overflow:hidden;background:#d8c3a0}
+#view canvas{position:absolute;inset:0;width:100%;height:100%}
+#dest{position:absolute;left:645px;top:59px;width:292px;height:290px;border:3px solid var(--ink);border-radius:10px;background:#fff;overflow:hidden;cursor:pointer}
+#dest img{position:absolute;inset:34px 10px 10px;width:calc(100% - 20px);height:calc(100% - 44px);object-fit:contain;transition:opacity .25s}
+#dest .lbl{position:absolute;left:0;top:0;background:var(--ink);color:#fff;font:700 19px/1 var(--mono);padding:8px 10px;letter-spacing:1px;z-index:1}
+#mini{position:absolute;left:645px;top:364px;width:292px;height:165px;border:3px solid var(--ink);border-radius:4px;overflow:hidden;background:#eee}
+#mini canvas{width:100%;height:100%;display:block}
+#status{position:absolute;left:645px;top:546px;width:292px;height:116px;display:flex;align-items:center;justify-content:center;
+  font:800 38px/1 var(--mono);letter-spacing:2px;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--shadow);
+  background:var(--ready);color:#77737d;transition:background .2s,color .2s}
+#status.go{background:var(--purple);color:#fff}
+
+#foot{position:absolute;left:60px;top:1288px;font:500 23px/1.4 var(--mono);color:#a59fa9;letter-spacing:2px}
+#foot b{font-weight:500;color:var(--purple-ink)}
+
+/* tray: below the 4:5 card */
+#tray{position:absolute;left:60px;top:1360px;width:960px;display:flex;align-items:center;gap:16px}
+#tray .t{width:96px;height:96px;border:3px solid var(--ink);border-radius:10px;background:#fff;padding:6px;cursor:pointer;
+  box-shadow:5px 5px 0 var(--shadow);transition:transform .12s}
+#tray .t:hover{transform:translate(-2px,-2px)}
+#tray .t.sel{outline:5px solid var(--purple);outline-offset:3px}
+#tray .t img{width:100%;height:100%;object-fit:contain;display:block}
+.btn{height:96px;padding:0 20px;border:3px solid var(--ink);background:#fff;box-shadow:5px 5px 0 var(--shadow);
+  font:700 19px/1.25 var(--mono);letter-spacing:1px;cursor:pointer;color:var(--ink);text-align:left}
+.btn:hover{background:#f3e7f1}
+.btn.dark{background:var(--ink);color:#fff}
+#tray .sp{flex:1}
+#err{position:absolute;left:60px;top:1622px;font:500 19px/1.3 var(--mono);color:#a3262e;letter-spacing:.5px}
+input[type=file]{display:none}
+
+/* seen threshold: drives the `if seen > …` line */
+#thr{position:absolute;left:60px;top:1482px;width:960px;height:120px;display:flex;align-items:center;gap:22px;
+  padding:0 22px;border:3px solid var(--ink);background:#fff;box-shadow:5px 5px 0 var(--shadow)}
+#thr .k{font:700 21px/1 var(--mono);letter-spacing:2px;white-space:nowrap}
+#thr .v{font:800 34px/1 var(--mono);color:var(--purple-ink);min-width:86px;text-align:right}
+#thr input{flex:1;-webkit-appearance:none;appearance:none;height:18px;background:var(--lilac);border-radius:7px;outline:none;margin:0}
+#thr input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:88px;height:88px;border-radius:50%;
+  background:var(--purple);border:4px solid var(--ink);box-shadow:4px 4px 0 var(--shadow);cursor:pointer}
+#thr input::-moz-range-thumb{width:80px;height:80px;border-radius:50%;background:var(--purple);border:4px solid var(--ink);cursor:pointer}
+#vthr{color:var(--purple-ink)}
+#vthr.bump{background:var(--purple);color:#fff}
+
+/* box overlay inside the cam */
+#ov{position:absolute;inset:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="fit"><div id="stage">
+  <div class="tag">JEV / IMAGES</div>
+  <h1 id="head"><span id="h1a">Show it</span> <span class="p" id="h1b">a photo.</span></h1>
+
+  <section class="panel" id="call">
+    <div class="bar"><span>CALL</span><span id="callmeta"></span></div>
+    <div class="line mono" style="top:74px">{ "drone cam": <img class="thumb" id="tcam" alt=""> }</div>
+    <div class="line" style="top:141px"><span class="boxtag">NOUL</span><span class="boxtag" style="margin-left:-8px">BOX</span><span class="q">Where is</span><img class="thumb" id="tdst" alt=""><span class="q">in the drone cam?</span></div>
+    <div class="line" style="top:213px;gap:24px">
+      <div class="chip pending" id="chipbox"><span class="k">box</span><span class="v" id="vbox">.00 .00 .00 .00</span></div>
+      <div class="chip pending" id="chipconf"><span class="k">seen</span><span class="v" id="vconf">0.00</span></div>
+    </div>
+    <div class="line code" style="top:276px">if seen &gt; <span id="vthr">0.50</span><span style="margin-left:-14px">:</span>&nbsp;<span class="hl" id="hfly">fly(box.center)</span></div>
+    <div class="line code" style="top:316px">else:&nbsp;&nbsp;<span class="hl" id="hsweep">sweep()</span></div>
+  </section>
+
+  <section class="panel" id="cam">
+    <div class="bar"><span>DRONE CAM<span class="rec" id="rec"></span></span><span></span></div>
+    <div id="view"><canvas id="cv" width="1206" height="1206"></canvas><canvas id="ov" width="1206" height="1206"></canvas></div>
+    <div id="dest" title="Swap the destination"><span class="lbl">DESTINATION</span><img id="dimg" alt="destination"></div>
+    <div id="mini"><canvas id="mv" width="584" height="330"></canvas></div>
+    <div id="status">READY</div>
+  </section>
+
+  <div id="foot">LIVE CALLS TO <b id="model">JEV-1.14</b> · IMAGE SUPPORT IS A PREVIEW</div>
+
+  <div id="tray">
+    <div id="targets" style="display:flex;gap:16px"></div>
+    <button class="btn" id="up">+ YOUR<br>PHOTO</button>
+    <span class="sp"></span>
+    <button class="btn" id="upscene">NEW<br>ROOM</button>
+    <button class="btn dark" id="play">PAUSE</button>
+    <input type="file" id="fup" accept="image/*">
+    <input type="file" id="fscene" accept="image/*">
+  </div>
+  <label id="thr"><span class="k">FLY IF SEEN &gt;</span>
+    <input type="range" id="rthr" min="0.05" max="0.95" step="0.05" value="0.5" aria-label="seen threshold">
+    <span class="v" id="lthr">0.50</span></label>
+  <div id="err"></div>
+</div></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+
+// ── layout: scale the 1080-wide stage to the window ─────────────────────────
+function fit(){
+  const W = 1080, H = 1670, pad = 16;
+  const s = Math.min((innerWidth - pad*2) / W, (innerHeight - pad) / H, 1) || 1;
+  const sw = Math.max(s, Math.min((innerWidth - pad*2) / W, 1)); // phones: fill width, scroll
+  const k = innerWidth < 700 ? sw : s;
+  $("stage").style.transform = `scale(${k})`;
+  $("fit").style.width = (W*k) + "px"; $("fit").style.height = (H*k) + "px";
+  $("fit").style.marginTop = innerWidth < 700 ? "8px" : Math.max(0, (innerHeight - H*k) / 2) + "px";
+}
+addEventListener("resize", fit); fit();
+
+// ── assets ───────────────────────────────────────────────────────────────────
+const TARGETS = [
+  {id:"mug",   src:"img/mug.jpg",   name:"the mug"},
+  {id:"plant", src:"img/plant.jpg", name:"the plant"},
+  {id:"cat",   src:"img/cat.jpg",   name:"Boots", sleepy:true},
+  {id:"book",  src:"img/book.jpg",  name:"the book"},
+];
+const load = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
+
+let world = null;          // HTMLImageElement of the room
+let V = 720;               // side of the square drone view, in world px
+const cam = {x:0, y:0};    // view centre, world px
+let trail = [];            // minimap breadcrumbs
+let target = null;         // {id, src, name, img, jpeg}
+let runId = 0, playing = true, callNo = 0, firstTarget = true, swapNo = 0;
+const SWAPS = [["Swap","the photo."],["New","destination."],["Swap","again."]];
+
+// ── image helpers ────────────────────────────────────────────────────────────
+function jpegOf(img, sx, sy, sw, sh, out){
+  const c = document.createElement("canvas"); c.width = out; c.height = out;
+  const g = c.getContext("2d");
+  g.drawImage(img, sx, sy, sw, sh, 0, 0, out, out);
+  return c.toDataURL("image/jpeg", 0.86);
+}
+function padSquare(img, side=512){
+  // destination photos go to jev padded onto white: any aspect, inside the size limits
+  const c = document.createElement("canvas"); c.width = side; c.height = side;
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,side,side);
+  const s = Math.min(side / img.naturalWidth, side / img.naturalHeight) * 0.92;
+  const w = img.naturalWidth*s, h = img.naturalHeight*s;
+  g.drawImage(img, (side-w)/2, (side-h)/2, w, h);
+  return c.toDataURL("image/jpeg", 0.88);
+}
+function camFrame(){
+  const x = clampX(cam.x) - V/2, y = clampY(cam.y) - V/2;
+  return jpegOf(world, x, y, V, V, 640);
+}
+const clampX = x => Math.max(V/2, Math.min(world.naturalWidth  - V/2, x));
+const clampY = y => Math.max(V/2, Math.min(world.naturalHeight - V/2, y));
+
+// ── rendering ────────────────────────────────────────────────────────────────
+const cv = $("cv").getContext("2d"), ov = $("ov").getContext("2d"), mv = $("mv").getContext("2d");
+let overlay = null;        // {box:[l,t,r,b], arrow:bool, t0}
+let zz = false;
+function draw(now){
+  requestAnimationFrame(draw);
+  if (!world) return;
+  const S = 1206, bob = Math.sin(now/900)*3, sway = Math.cos(now/1300)*3;
+  const x = clampX(cam.x) - V/2 + sway, y = clampY(cam.y) - V/2 + bob;
+  cv.drawImage(world, x, y, V, V, 0, 0, S, S);
+  // vignette + corner brackets + centre cross
+  cv.strokeStyle = "rgba(255,255,255,.95)"; cv.lineWidth = 6;
+  const m = 34, L = 70;
+  [[m,m,1,1],[S-m,m,-1,1],[m,S-m,1,-1],[S-m,S-m,-1,-1]].forEach(([a,b,dx,dy])=>{
+    cv.beginPath(); cv.moveTo(a, b + dy*L); cv.lineTo(a, b); cv.lineTo(a + dx*L, b); cv.stroke(); });
+  cv.lineWidth = 2.5; cv.strokeStyle = "rgba(255,255,255,.8)";
+  cv.beginPath(); cv.moveTo(S/2-16,S/2); cv.lineTo(S/2+16,S/2); cv.moveTo(S/2,S/2-16); cv.lineTo(S/2,S/2+16); cv.stroke();
+
+  ov.clearRect(0,0,S,S);
+  if (overlay){
+    const [l,t,r,b] = overlay.box.map(v => v*S);
+    const a = Math.min(1, (now - overlay.t0)/220);
+    ov.globalAlpha = a;
+    if (overlay.fill){ ov.fillStyle = "rgba(141,42,133,.28)"; ov.fillRect(l,t,r-l,b-t); }
+    ov.lineWidth = 12; ov.strokeStyle = "#fff"; ov.strokeRect(l,t,r-l,b-t);
+    ov.lineWidth = 6;  ov.strokeStyle = "#8d2a85"; ov.strokeRect(l,t,r-l,b-t);
+    ov.lineWidth = 3;  ov.strokeStyle = "#fff"; ov.strokeRect(l+9,t+9,r-l-18,b-t-18);
+    if (overlay.arrow){
+      const cx = (l+r)/2, cy = (t+b)/2, sx = S/2, sy = S/2;
+      const k = Math.min(1, (now - overlay.t0)/450);
+      const ex = sx + (cx-sx)*k, ey = sy + (cy-sy)*k;
+      arrow(ov, sx, sy, ex, ey);
+    }
+    ov.globalAlpha = 1;
+  }
+  if (zz){
+    ov.font = "800 70px 'JetBrains Mono', monospace"; ov.fillStyle = "#8d2a85";
+    const p = (now/1400) % 1;
+    ["z","z","Z"].forEach((c,i)=>{ const q = (p + i/3) % 1;
+      ov.globalAlpha = Math.sin(q*Math.PI); ov.fillText(c, S*0.66 + q*70, S*0.38 - q*150); });
+    ov.globalAlpha = 1;
+  }
+  drawMini();
+}
+function arrow(g, x1, y1, x2, y2){
+  const d = Math.hypot(x2-x1, y2-y1); if (d < 30) return;
+  const ux = (x2-x1)/d, uy = (y2-y1)/d, h = 46;
+  for (const [w, c] of [[20,"#fff"],[10,"#8d2a85"]]){
+    g.lineWidth = w; g.strokeStyle = c; g.fillStyle = c; g.lineCap = "round";
+    g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2-ux*h*0.6, y2-uy*h*0.6); g.stroke();
+    g.beginPath(); g.moveTo(x2,y2);
+    g.lineTo(x2-ux*h - uy*h*0.6 - ux*(w-10)/2, y2-uy*h + ux*h*0.6);
+    g.lineTo(x2-ux*h + uy*h*0.6, y2-uy*h - ux*h*0.6); g.closePath(); g.fill();
+  }
+}
+function drawMini(){
+  const W = 584, H = 330, ww = world.naturalWidth, wh = world.naturalHeight;
+  const s = Math.max(W/ww, H/wh), ox = (W - ww*s)/2, oy = (H - wh*s)/2;
+  mv.drawImage(world, ox, oy, ww*s, wh*s);
+  mv.fillStyle = "rgba(255,255,255,.35)"; mv.fillRect(0,0,W,H);
+  if (trail.length > 1){
+    mv.setLineDash([10,8]); mv.lineWidth = 3; mv.strokeStyle = "#8d2a85";
+    mv.beginPath(); trail.forEach((p,i)=> i ? mv.lineTo(ox+p.x*s, oy+p.y*s) : mv.moveTo(ox+p.x*s, oy+p.y*s)); mv.stroke();
+    mv.setLineDash([]);
+  }
+  const x = clampX(cam.x) - V/2, y = clampY(cam.y) - V/2;
+  mv.lineWidth = 5; mv.strokeStyle = "#8d2a85"; mv.strokeRect(ox+x*s, oy+y*s, V*s, V*s);
+}
+requestAnimationFrame(draw);
+
+// ── UI state ─────────────────────────────────────────────────────────────────
+function head(a, b){
+  const h = $("head"); h.classList.add("fade");
+  setTimeout(()=>{ $("h1a").textContent = a; $("h1b").textContent = b; h.classList.remove("fade"); }, 180);
+}
+function status(txt){ const s = $("status"); s.textContent = txt; s.classList.toggle("go", txt === "LOCKED ON" || txt === "ARRIVED"); }
+function pending(){
+  $("chipbox").classList.add("pending"); $("chipconf").classList.add("pending");
+  $("hfly").classList.remove("on"); $("hsweep").classList.remove("on");
+}
+const f2 = v => (v >= 1 ? "1.00" : v.toFixed(2).replace(/^0/, ""));
+function showResult(r){
+  $("vbox").textContent = r.box.map(f2).join(" ");
+  $("vconf").textContent = (r.seen ?? 0).toFixed(2);
+  $("chipbox").classList.remove("pending"); $("chipconf").classList.remove("pending");
+  $("callmeta").textContent = `#${callNo} · ${(r.ms/1000).toFixed(2)} s`;
+}
+function err(msg){ $("err").textContent = msg || ""; }
+
+// ── seen threshold (remembered per browser) ──────────────────────────────────
+let THR = 0.5;
+try { const s = parseFloat(localStorage.getItem("dronecam.thr")); if (s >= 0.05 && s <= 0.95) THR = s; } catch {}
+function setThr(v){
+  THR = Math.round(v*100)/100;
+  $("rthr").value = THR; $("lthr").textContent = $("vthr").textContent = THR.toFixed(2);
+  try { localStorage.setItem("dronecam.thr", THR); } catch {}
+}
+$("rthr").oninput = e => { setThr(+e.target.value); $("vthr").classList.add("bump"); };
+$("rthr").onchange = () => $("vthr").classList.remove("bump");
+setThr(THR);
+
+// ── motion ───────────────────────────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const ease = t => t<.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+function flyTo(x, y, ms, rid){
+  x = clampX(x); y = clampY(y);
+  const x0 = clampX(cam.x), y0 = clampY(cam.y), t0 = performance.now();
+  return new Promise(done => {
+    (function step(){
+      if (rid !== runId) return done();
+      const k = Math.min(1, (performance.now() - t0)/ms), e = ease(k);
+      cam.x = x0 + (x-x0)*e; cam.y = y0 + (y-y0)*e;
+      if (k < 1) requestAnimationFrame(step); else { trail.push({x:cam.x, y:cam.y}); if (trail.length > 40) trail.shift(); done(); }
+    })();
+  });
+}
+function sweepGrid(){
+  const ww = world.naturalWidth, wh = world.naturalHeight, step = V*0.82;
+  const xs = [], ys = [];
+  for (let x = V/2; x < ww - V/2 + step*0.5; x += step) xs.push(Math.min(x, ww - V/2));
+  for (let y = V/2; y < wh - V/2 + step*0.5; y += step) ys.push(Math.min(y, wh - V/2));
+  const pts = [];
+  ys.forEach((y,r)=> (r%2 ? [...xs].reverse() : xs).forEach(x => pts.push({x,y})));
+  return pts;
+}
+
+// ── jev ──────────────────────────────────────────────────────────────────────
+async function askJev(rid){
+  const shot = camFrame();
+  $("tcam").src = shot;
+  callNo++; pending();
+  $("callmeta").textContent = `#${callNo} · …`;
+  const t0 = performance.now();
+  const res = await fetch("api/box", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({cam: shot, destination: target.jpeg})});
+  if (rid !== runId) return null;
+  const r = await res.json().catch(()=>({error:"bad response"}));
+  if (!res.ok || r.error){ err(r.error || `HTTP ${res.status}`); throw new Error(r.error); }
+  err(""); r.rtt = performance.now() - t0;
+  if (r.model) $("model").textContent = r.model.toUpperCase();
+  showResult(r);
+  return r;
+}
+
+async function hunt(rid){
+  status("SWEEPING"); $("rec").classList.add("on");
+  let pts = sweepGrid();
+  // start the sweep from the stop nearest the drone
+  let i0 = 0, best = 1e12;
+  pts.forEach((p,i)=>{ const d = (p.x-cam.x)**2 + (p.y-cam.y)**2; if (d < best){ best = d; i0 = i; } });
+  pts = pts.slice(i0).concat(pts.slice(0, i0));
+  let fails = 0;
+  for (let lap = 0; lap < 3; lap++){
+    for (const p of pts){
+      if (rid !== runId) return;
+      if (Math.hypot(p.x-cam.x, p.y-cam.y) > 4){ overlay = null; await flyTo(p.x, p.y, 750, rid); }
+      if (rid !== runId) return;
+      let r;
+      try { r = await askJev(rid); } catch { if (++fails > 4) { status("READY"); return; } await sleep(900); continue; }
+      if (!r) return;
+      if ((r.seen ?? 0) > THR){
+        if (await approach(r, rid)) return;
+        status("SWEEPING");
+      } else {
+        $("hsweep").classList.add("on");
+        await sleep(380);
+      }
+    }
+  }
+  status("READY"); $("rec").classList.remove("on");
+}
+
+async function approach(r, rid){
+  for (let hop = 0; hop < 4; hop++){
+    if (rid !== runId) return true;
+    status("LOCKED ON"); $("hfly").classList.add("on");
+    overlay = {box:r.box, arrow:false, t0:performance.now()};
+    head("Jev draws", "the box.");
+    await sleep(750); if (rid !== runId) return true;
+    const cx = (r.box[0]+r.box[2])/2, cy = (r.box[1]+r.box[3])/2;
+    const off = Math.hypot(cx-.5, cy-.5);
+    if (off < 0.09){ arrived(); return true; }
+    head("Code flies", "to it.");
+    overlay = {box:r.box, arrow:true, t0:performance.now()};
+    await sleep(500);
+    const x0 = clampX(cam.x) - V/2, y0 = clampY(cam.y) - V/2;
+    overlay = null;
+    await flyTo(x0 + cx*V, y0 + cy*V, 900, rid);
+    if (rid !== runId) return true;
+    try { r = await askJev(rid); } catch { return false; }
+    if (!r) return true;
+    if ((r.seen ?? 0) <= THR){ $("hsweep").classList.add("on"); overlay = null; return false; }
+  }
+  overlay = {box:r.box, t0:performance.now(), fill:true};
+  arrived(); return true;
+}
+
+function arrived(){
+  status("ARRIVED"); $("rec").classList.remove("on");
+  overlay = overlay ? {...overlay, arrow:false, fill:true, t0:performance.now()} : null;
+  head("Found", target.name.replace(/^the /, "the ") + ".");
+  zz = !!target.sleepy;
+  if (playing) autoNext(runId);
+}
+async function autoNext(rid){
+  await sleep(3200);
+  if (rid !== runId || !playing) return;
+  const i = TARGETS.findIndex(t => t.id === target.id);
+  if (i < 0) return;
+  // one tour of the built-in targets, then stop so an idle tab is not calling jev forever
+  if (i === TARGETS.length - 1){ setPlaying(false); return; }
+  pick(TARGETS[i+1]);
+}
+
+// ── choosing a destination ───────────────────────────────────────────────────
+async function pick(t){
+  runId++; const rid = runId;
+  zz = false; overlay = null; pending(); err("");
+  if (!t.img){ t.img = await load(t.src); }
+  if (!t.jpeg) t.jpeg = padSquare(t.img);
+  target = t;
+  $("dimg").style.opacity = 0;
+  setTimeout(()=>{ $("dimg").src = t.src; $("dimg").style.opacity = 1; }, 150);
+  $("tdst").src = t.jpeg;
+  document.querySelectorAll("#targets .t").forEach(el => el.classList.toggle("sel", el.dataset.id === t.id));
+  if (firstTarget){ head("Show it", "a photo."); firstTarget = false; }
+  else head(...SWAPS[swapNo++ % SWAPS.length]);
+  status("READY");
+  await sleep(700);
+  if (rid === runId) hunt(rid);
+}
+
+function setPlaying(on){
+  playing = on; $("play").textContent = on ? "PAUSE" : "PLAY";
+  if (!on){ runId++; status("READY"); $("rec").classList.remove("on"); overlay = null; }
+}
+$("play").onclick = () => { if (playing) setPlaying(false); else { setPlaying(true); pick(target || TARGETS[0]); } };
+$("dest").onclick = () => { const i = TARGETS.findIndex(t => t.id === target?.id); pick(TARGETS[(i+1) % TARGETS.length]); if (!playing) setPlaying(true); };
+
+async function fileToImage(f){
+  const url = URL.createObjectURL(f);
+  try { return await load(url); } catch { err("Couldn't read that image."); return null; }
+}
+$("up").onclick = () => $("fup").click();
+$("fup").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const img = await fileToImage(f); if (!img) return;
+  const t = {id:"you", src:img.src, name:"it", img};
+  addThumb(t, true); setPlaying(true); pick(t);
+};
+$("upscene").onclick = () => $("fscene").click();
+$("fscene").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const img = await fileToImage(f); if (!img) return;
+  setWorld(img); if (target){ setPlaying(true); pick(target); }
+};
+
+function addThumb(t, front){
+  document.querySelector(`#targets .t[data-id="${t.id}"]`)?.remove();
+  const d = document.createElement("div"); d.className = "t"; d.dataset.id = t.id;
+  d.innerHTML = `<img alt="${t.name}" src="${t.src}">`;
+  d.onclick = () => { setPlaying(true); pick(t); };
+  front ? $("targets").prepend(d) : $("targets").append(d);
+}
+function setWorld(img){
+  world = img; trail = [];
+  // a square view about half the room's short side, like the drone in the video
+  V = Math.round(Math.min(img.naturalWidth, img.naturalHeight) * 0.5);
+  cam.x = V/2; cam.y = V/2;
+}
+
+(async function init(){
+  TARGETS.forEach(t => addThumb(t));
+  setWorld(await load("img/room.jpg"));
+  $("tcam").src = camFrame();
+  pick(TARGETS[0]);
+})();
+</script>
+</body>
+</html>
